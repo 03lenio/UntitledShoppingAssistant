@@ -80,7 +80,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           lastResponse = result;
           // Create the popup that informs the user about the site
           chrome.windows.create({
-            url: chrome.runtime.getURL("info-popup.html"),
+            url: chrome.runtime.getURL("html/info-popup.html"),
             type: "popup",
             width: 400,
             height: 300
