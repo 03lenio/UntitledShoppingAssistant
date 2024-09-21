@@ -1,5 +1,18 @@
 console.log("Background script loaded");
 
+// Since Azure has pretty harsh token limits we often need to cutoff the length of the prompt to comply with their rate limits
+function cutoffPrompt(text, amount) {
+  // Split the text into words based on spaces
+  const words = text.split(/\s+/);
+  // Check if the text has more than 100 words
+  if (words.length > amount) {
+    // Join the first 100 words and add ellipsis
+    return words.slice(0, amount).join(' ') + '...';
+  }
+  // If the text is less than or equal to 100 words, return it as is
+  return text;
+}
+
 // Load the config and assign the API endpoint and key to constants
 async function loadConfig() {
   try {
@@ -17,9 +30,8 @@ async function loadConfig() {
   }
 }
 
-const analyzeSite = async (apiEndpoint, apiKey) => {
+const analyzeSite = async (apiEndpoint, apiKey, prompt) => {
   // Azure API auth stuff
-  // The prompt, currently hardcoded
   const payload = {
     "messages": [
       {
@@ -27,7 +39,7 @@ const analyzeSite = async (apiEndpoint, apiKey) => {
         "content": [
           {
             "type": "text",
-            "text": "This is a test call to the api, but you may reply with a joke"
+            "text": cutoffPrompt(prompt, 100)
           }
         ]
       }
@@ -74,7 +86,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         apiEndpoint = config.apiEndpoint;
         apiKey = config.apiKey;
         // Call the async function and handle the result using .then()
-        analyzeSite(apiEndpoint, apiKey).then(result => {
+        analyzeSite(apiEndpoint, apiKey, message.prompt).then(result => {
            // send the result back once the async function completes
           sendResponse(result);
           lastResponse = result;

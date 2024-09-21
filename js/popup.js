@@ -12,11 +12,17 @@ async function toggleAnalysis() {
     } else {
         // Enable analysis mode if we got a product
         const searchText = document.getElementById('product').value;
+        const descriptionText = document.getElementById('description').value;
         if (searchText) {
+            if (descriptionText) {
             analyzeBtn.classList.add("analyzing");
             analyzeBtn.textContent = "Disable analysis";
             chrome.storage.local.set({ searching: true });
             chrome.storage.local.set({ product: searchText });
+            chrome.storage.local.set({ description: descriptionText});
+            } else {
+                alert("Please specify a rough description of the product you are looking for!");
+            }
         } else {
             alert("Please specify a product!");
         }
