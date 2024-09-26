@@ -46,7 +46,7 @@ const analyzeSite = async (apiEndpoint, apiKey, prompt) => {
     ],
     "temperature": 0.7,
     "top_p": 0.95,
-    "max_tokens": 100
+    "max_tokens": 750
   }
 
   // Make the request
@@ -85,6 +85,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       if(config) {
         apiEndpoint = config.apiEndpoint;
         apiKey = config.apiKey;
+        console.log(cutoffPrompt(message.prompt, 100));
         // Call the async function and handle the result using .then()
         analyzeSite(apiEndpoint, apiKey, message.prompt).then(result => {
            // send the result back once the async function completes
@@ -112,6 +113,19 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     });
 
     return true; // Indicates that the response will be sent asynchronously
+  } 
+  else if(message.action == "showAnalyzePopup") {
+    chrome.windows.create({
+      url: chrome.runtime.getURL("html/analyze-popup.html") + `?prompt=${encodeURIComponent(message.prompt)}`,
+      type: "popup",
+      width: 400,
+      height: 300
+    }, function(newWindow) {
+      // Send the response text to the newly created popup window
+      chrome.runtime.sendMessage({
+        action: "displayResponse"
+      });
+    });
   }
   else if(message.action == "popupLoaded") {
     // As soon as the pop up is loaded, send the last API response back to the popup
