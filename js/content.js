@@ -22,33 +22,27 @@ function isUrlValid(url, urlsToIgnore) {
     );
 }
 
+function doesSiteContainTerms(webText, terms) {
+    return terms.some(term => 
+        webText.toLowerCase().includes(term.toLowerCase())
+    );
+}
+
 // API calls cost money so we only want to analyze sites that at least mention the desired product in their webtext
 async function checkSiteEligble() {
     let searchText = await getProduct();
     let descriptionText = await getDescription();
     let searching = await isSearching();
     urlsToIgnore = ["bing.com", "google.com", "yandex", "duckduckgo", "brave.com"]
-    if(searching && isUrlValid(document.URL, urlsToIgnore)) {
+    searchTerms = searchText.split(" ");
+    if(searching && isUrlValid(document.URL, urlsToIgnore) && doesSiteContainTerms(document.body.innerText, searchTerms)) {
         // Check if the text exists on the webpage
-        searchTerms = searchText.split(" ");
-        console.log(searchTerms);
-        searchTerms.forEach(element => {
-            if(document.body.innerText.toLowerCase().includes(element.toLowerCase())) {
-                console.log(`${element} was found on the site`);
-            } else {
-                return;
-            }
-        });
-        console.log(`The text "${searchText}" was found on this page.`);
         // We check if there is an indicator of a checkout or add to cart option, this filters out sites that only compare prices
         if (document.body.innerHTML.toLowerCase().includes("cart") || document.body.innerHTML.toLowerCase().includes("checkout")) {
             try {
                 // We send a message to the background worker, asking it to create the popup which confirms if the site should be analyzed
                 let prompt = `Please analyze the following webpage text against this description of the product the user is looking for "${descriptionText}" webpage_text: "${document.body.innerText}"`
                 const response = await chrome.runtime.sendMessage({ action: "showAnalyzePopup", prompt: prompt });
-                //TODO// Include the webpage text into the prompt as well as the description of the users desired item
-
-                //const response = await chrome.runtime.sendMessage({ action: "analyzeSite", prompt });
                 console.log(response);
             } catch (error) {
                 console.log(error.message)
@@ -56,9 +50,13 @@ async function checkSiteEligble() {
             }
         }
         } else {
-        console.log(`The text "${searchText}" was NOT found on this page.`);
+        console.log(`The product "${searchText}" is likely not to be found on this site.`);
     }
 }
 
-
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.action === "getPageText") {
+      sendResponse({ webText: document.body.innerText });
+    }
+  });           
 checkSiteEligble();

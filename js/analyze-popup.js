@@ -14,3 +14,7 @@ analyzeBtn.addEventListener('click', async function () {
   }
 });
 
+const closeBtn = document.getElementById('closeBtn');
+closeBtn.addEventListener('click',  function () {
+  window.close();
+});

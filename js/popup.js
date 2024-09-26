@@ -1,4 +1,4 @@
-import { getProduct, isSearching } from './util.js';
+import { getProduct, isSearching, getDescription } from './util.js';
 
 // UI and Storage handling of the analysis mode
 async function toggleAnalysis() {
@@ -77,5 +77,28 @@ document.addEventListener('DOMContentLoaded', function () {
     analyzeBtn.addEventListener('click', function () {
             toggleAnalysis();
     });
+
+    // Analyse the currently opened tab
+    const analyzeCurrentSiteBtn = document.getElementById('analyzeSiteBtn');
+    analyzeCurrentSiteBtn.addEventListener('click', function () {
+        // Get the currently active tab
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+            const activeTab = tabs[0].id;
+            // Send a message to the content script to get the page text
+            chrome.tabs.sendMessage(activeTab, { action: "getPageText" }, async (response) => {
+              if (response) {
+                // Display the page text in the popup
+                let descriptionText = await getDescription();
+                let prompt = `Please analyze the following webpage text against this description of the product the user is looking for "${descriptionText}" webpage_text: "${response.webText}"`                
+                const analyzeSiteResponse = await chrome.runtime.sendMessage({ action: "analyzeSite", prompt: prompt });
+              } else {
+                window.alert("No text found on this webpage!");
+              }
+            });
+          });
+    })
 });
 
+
+
+console.log(prompt);
